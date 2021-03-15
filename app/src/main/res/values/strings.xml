@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">arduino_car</string>
+    <string name="led_off">LED OFF</string>
+    <string name="led_on">LED ON</string>
+    <string name="send">SEND</string>
+    <string name="command">command</string>
 </resources>

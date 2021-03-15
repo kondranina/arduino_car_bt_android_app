@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //Адрес опредеяется следующим образом: установите соединение
             //между ПК и модулем (пин: 1234), а затем посмотрите в настройках
             //соединения адрес модуля. Скорее всего он будет аналогичным.
-            BluetoothDevice device = bluetooth.getRemoteDevice("00:13:02:01:00:09"); //todo MAC
+            BluetoothDevice device = bluetooth.getRemoteDevice("98:D3:A1:FD:45:09"); //todo MAC
 
             //Инициируем соединение с устройством
             Method m = device.getClass().getMethod(
@@ -74,17 +74,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             //В случае появления любых ошибок, выводим в лог сообщение
         } catch (IOException e) {
-            Log.d("BLUETOOTH", e.getMessage());
+            Log.d("BLUETOOTH", e.getMessage(), e);
         } catch (SecurityException e) {
-            Log.d("BLUETOOTH", e.getMessage());
+            Log.d("BLUETOOTH", e.getMessage(), e);
         } catch (NoSuchMethodException e) {
-            Log.d("BLUETOOTH", e.getMessage());
+            Log.d("BLUETOOTH", e.getMessage(), e);
         } catch (IllegalArgumentException e) {
-            Log.d("BLUETOOTH", e.getMessage());
+            Log.d("BLUETOOTH", e.getMessage(), e);
         } catch (IllegalAccessException e) {
-            Log.d("BLUETOOTH", e.getMessage());
+            Log.d("BLUETOOTH", e.getMessage(), e);
         } catch (InvocationTargetException e) {
-            Log.d("BLUETOOTH", e.getMessage());
+            Log.d("BLUETOOTH", e.getMessage(), e);
         }
 
         //Выводим сообщение об успешном подключении
@@ -98,8 +98,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try {
             //Получаем выходной поток для передачи данных
             OutputStream outStream = clientSocket.getOutputStream();
+            outStream.flush();
 
-            byte value = 0;
+            int value = 0;
 
 
             //В зависимости от того, какая кнопка была нажата,
@@ -109,11 +110,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 ledOn.setBackgroundColor(Color.GREEN);
                 ledOff.setBackgroundColor(Color.GRAY);
             } else if (v == ledOff) {
-                value = 2;
+                value = 0;
                 ledOn.setBackgroundColor(Color.GRAY);
                 ledOff.setBackgroundColor(Color.GREEN);
             }
 
+            System.out.println("value before send = " + value);
             //Пишем данные в выходной поток
             outStream.write(value);
 

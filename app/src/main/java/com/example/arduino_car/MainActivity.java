@@ -8,6 +8,9 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -20,108 +23,78 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    //Экземпляры классов наших кнопок
-    Button ledOn;
-    Button ledOff;
-    Button sendCmd;
+import static com.example.arduino_car.CreateConnectThread.CONNECTING_STATUS;
+import static com.example.arduino_car.CreateConnectThread.MESSAGE_READ;
+
+public class MainActivity extends AppCompatActivity {
+    public static CreateConnectThread createConnectThread;
+    public static ConnectedThread connectedThread;
+    Button ledOn, ledOff, sendCmd;
     EditText command;
 
-    //Сокет, с помощью которого мы будем отправлять данные на Arduino
-    BluetoothSocket clientSocket;
-
-    //Эта функция запускается автоматически при запуске приложения
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //"Соединям" вид кнопки в окне приложения с реализацией
+        // UI Initialization
         ledOn = findViewById(R.id.button1);
         ledOff = findViewById(R.id.button2);
         sendCmd = findViewById(R.id.button3);
         command = findViewById(R.id.editTextTextPersonName);
-
-        //Добавлем "слушатель нажатий" к кнопке
-        ledOn.setOnClickListener(this);
-        ledOff.setOnClickListener(this);
-        sendCmd.setOnClickListener(this);
-
         ledOn.setBackgroundColor(Color.GRAY);
         ledOff.setBackgroundColor(Color.GRAY);
 
-        //Включаем bluetooth. Если он уже включен, то ничего не произойдет
-        String enableBT = BluetoothAdapter.ACTION_REQUEST_ENABLE;
-        startActivityForResult(new Intent(enableBT), 0);
-
-        //Мы хотим использовать тот bluetooth-адаптер, который задается по умолчанию
-        BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
-
-        //Пытаемся проделать эти действия
-        try{
-            //Устройство с данным адресом - наш Bluetooth Bee
-            //Адрес опредеяется следующим образом: установите соединение
-            //между ПК и модулем (пин: 1234), а затем посмотрите в настройках
-            //соединения адрес модуля. Скорее всего он будет аналогичным.
-            BluetoothDevice device = bluetooth.getRemoteDevice("98:D3:A1:FD:45:09"); //todo MAC
-
-            //Инициируем соединение с устройством
-            Method m = device.getClass().getMethod(
-                    "createRfcommSocket", new Class[] {int.class});
-
-            clientSocket = (BluetoothSocket) m.invoke(device, 1);
-            clientSocket.connect();
-
-            //В случае появления любых ошибок, выводим в лог сообщение
-        } catch (IOException e) {
-            Log.d("BLUETOOTH", e.getMessage(), e);
-        } catch (SecurityException e) {
-            Log.d("BLUETOOTH", e.getMessage(), e);
-        } catch (NoSuchMethodException e) {
-            Log.d("BLUETOOTH", e.getMessage(), e);
-        } catch (IllegalArgumentException e) {
-            Log.d("BLUETOOTH", e.getMessage(), e);
-        } catch (IllegalAccessException e) {
-            Log.d("BLUETOOTH", e.getMessage(), e);
-        } catch (InvocationTargetException e) {
-            Log.d("BLUETOOTH", e.getMessage(), e);
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothDevice device = bluetoothAdapter.getRemoteDevice("98:D3:A1:FD:45:09");
+        if (device != null){
+            /*
+            This is the most important piece of code. When "deviceName" is found
+            the code will call a new thread to create a bluetooth connection to the
+             */
+            createConnectThread = new CreateConnectThread(bluetoothAdapter, device.getAddress());
+            createConnectThread.start();
         }
 
-        //Выводим сообщение об успешном подключении
-        Toast.makeText(getApplicationContext(), "CONNECTED", Toast.LENGTH_LONG).show();
-    }
+        //todo add GUI handler for messages from Arduino
 
-    @Override
-    //Как раз эта функция и будет вызываться
-    public void onClick(View v) {
-        //Пытаемся послать данные
-        try {
-            //Получаем выходной поток для передачи данных
-            OutputStream outStream = clientSocket.getOutputStream();
-            outStream.flush();
-
-            int value = 0;
-
-
-            //В зависимости от того, какая кнопка была нажата,
-            //изменяем данные для посылки
-            if (v == ledOn) {
-                value = 1;
+        ledOn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String value = "1";
                 ledOn.setBackgroundColor(Color.GREEN);
                 ledOff.setBackgroundColor(Color.GRAY);
-            } else if (v == ledOff) {
-                value = 0;
-                ledOn.setBackgroundColor(Color.GRAY);
-                ledOff.setBackgroundColor(Color.GREEN);
+                connectedThread.write(value); // Send command to Arduino board
             }
+        });
+        ledOff.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String value = "0";
+                ledOn.setBackgroundColor(Color.GREEN);
+                ledOff.setBackgroundColor(Color.GRAY);
+                connectedThread.write(value); // Send command to Arduino board
+            }
+        });
+        sendCmd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //todo test this
+                connectedThread.write(command.getText().toString()); // Send command to Arduino board
+            }
+        });
+    }
 
-            System.out.println("value before send = " + value);
-            //Пишем данные в выходной поток
-            outStream.write(value);
-
-        } catch (IOException e) {
-            //Если есть ошибки, выводим их в лог
-            Log.d("BLUETOOTH", e.getMessage());
+    /* ============================ Terminate Connection at BackPress ====================== */
+    @Override
+    public void onBackPressed() {
+        // Terminate Bluetooth Connection and close app
+        if (createConnectThread != null){
+            createConnectThread.cancel();
         }
+        Intent a = new Intent(Intent.ACTION_MAIN);
+        a.addCategory(Intent.CATEGORY_HOME);
+        a.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(a);
     }
 }

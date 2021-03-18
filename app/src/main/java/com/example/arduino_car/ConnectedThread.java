@@ -1,22 +1,25 @@
 package com.example.arduino_car;
 
 import android.bluetooth.BluetoothSocket;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.os.SystemClock;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import static com.example.arduino_car.CreateConnectThread.MESSAGE_READ;
-
 public class ConnectedThread extends Thread {
     private final BluetoothSocket mmSocket;
     private final InputStream mmInStream;
     private final OutputStream mmOutStream;
+    private final Handler mHandler;
 
-    public ConnectedThread(BluetoothSocket socket) {
+    public ConnectedThread(BluetoothSocket socket, Handler handler) {
         mmSocket = socket;
+        mHandler = handler;
         InputStream tmpIn = null;
         OutputStream tmpOut = null;
 
@@ -29,7 +32,6 @@ public class ConnectedThread extends Thread {
 
         mmInStream = tmpIn;
         mmOutStream = tmpOut;
-
     }
 
     @Override
@@ -46,13 +48,12 @@ public class ConnectedThread extends Thread {
                     SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
                     bytes = mmInStream.available(); // how many bytes are ready to be read?
                     bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
-                    System.out.println("bytes from arduino: " + buffer.toString());
-//                    mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
-//                            .sendToTarget(); // Send the obtained bytes to the UI activity
-                    //todo add handler to read messages from arduino
+                    mHandler.obtainMessage(MainActivity.MESSAGE_READ, bytes, -1, buffer)
+                            .sendToTarget(); // Send the obtained bytes to the UI activity
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+
                 break;
             }
         }

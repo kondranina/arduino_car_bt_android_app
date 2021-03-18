@@ -4,4 +4,8 @@
     <string name="led_on">LED ON</string>
     <string name="send">SEND</string>
     <string name="command">command</string>
+    <string name="bt_on">BT ON</string>
+    <string name="bt_off">BT_OFF</string>
+    <string name="connect">CONNECT</string>
+    <string name="disconnect">DISCONNECT</string>
 </resources>

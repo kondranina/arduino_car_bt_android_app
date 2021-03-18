@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         ledOn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String value = "1";
+                String value = "turn on";
                 if(mConnectedThread != null) //First check to make sure thread created
                     mConnectedThread.write(value);
             }
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         ledOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String value = "0";
+                String value = "turn off";
                 if(mConnectedThread != null) //First check to make sure thread created
                     mConnectedThread.write(value);
             }

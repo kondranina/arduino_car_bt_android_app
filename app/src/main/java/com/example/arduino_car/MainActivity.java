@@ -24,6 +24,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
+import static com.example.arduino_car.CommandTypeEnum.LED_OFF;
+import static com.example.arduino_car.CommandTypeEnum.LED_ON;
+
 
 public class MainActivity extends AppCompatActivity {
     private final String TAG = MainActivity.class.getSimpleName();
@@ -38,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     //GUI elements
     Button ledOn, ledOff, sendCmd, bt_on, bt_off, connect, disconnect;
     EditText command;
-    TextView btStatus, mReadBuffer; //todo добавить в gui
+    TextView btStatus, mReadBuffer;
 
     private BluetoothAdapter bluetoothAdapter;
 
@@ -83,17 +86,15 @@ public class MainActivity extends AppCompatActivity {
         ledOn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String value = "turn on";
                 if(mConnectedThread != null) //First check to make sure thread created
-                    mConnectedThread.write(value);
+                    mConnectedThread.write(LED_ON.getValue());
             }
         });
         ledOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String value = "turn off";
                 if(mConnectedThread != null) //First check to make sure thread created
-                    mConnectedThread.write(value);
+                    mConnectedThread.write(LED_OFF.getValue());
             }
         });
         sendCmd.setOnClickListener(new View.OnClickListener() {

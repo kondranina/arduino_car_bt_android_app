@@ -67,6 +67,12 @@ public class ConnectedThread extends Thread {
         } catch (IOException e) { }
     }
 
+    public void write(int input) {
+        try {
+            mmOutStream.write(input);
+        } catch (IOException e) { }
+    }
+
     /* Call this from the main activity to shutdown the connection */
     public void cancel() {
         try {
